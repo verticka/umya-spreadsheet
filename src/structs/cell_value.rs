@@ -422,23 +422,23 @@ mod tests {
         let mut obj = CellValue::default();
 
         obj.set_formula("1+1").set_formula_result_default("2");
-        assert_eq!(obj.data_type_crate(), "n");
+        assert_eq!(obj.get_data_type_crate(), "n");
 
         obj.set_formula_result_default("TRUE");
-        assert_eq!(obj.data_type_crate(), "b");
+        assert_eq!(obj.get_data_type_crate(), "b");
 
         obj.set_formula_result_default("#N/A");
-        assert_eq!(obj.data_type_crate(), "e");
+        assert_eq!(obj.get_data_type_crate(), "e");
 
         obj.set_formula_result_default("OK");
-        assert_eq!(obj.data_type_crate(), "str");
+        assert_eq!(obj.get_data_type_crate(), "str");
 
         obj.set_formula_result_default("");
-        assert_eq!(obj.data_type_crate(), "");
+        assert_eq!(obj.get_data_type_crate(), "");
 
         obj.remove_formula();
         obj.set_value_string("OK");
-        assert_eq!(obj.data_type_crate(), "s");
+        assert_eq!(obj.get_data_type_crate(), "s");
     }
 
     #[test]
@@ -447,26 +447,26 @@ mod tests {
         obj.set_formula("A1+1");
 
         obj.set_formula_result_number(3.5);
-        assert_eq!(obj.formula(), "A1+1");
+        assert_eq!(obj.get_formula(), "A1+1");
         assert_eq!(obj.raw_value, CellRawValue::Numeric(3.5));
 
         obj.set_formula_result_bool(false);
-        assert_eq!(obj.formula(), "A1+1");
+        assert_eq!(obj.get_formula(), "A1+1");
         assert_eq!(obj.raw_value, CellRawValue::Bool(false));
 
         obj.set_formula_result_error(CellErrorType::Ref);
-        assert_eq!(obj.formula(), "A1+1");
+        assert_eq!(obj.get_formula(), "A1+1");
         assert_eq!(obj.raw_value, CellRawValue::Error(CellErrorType::Ref));
 
         obj.set_formula_result_string("OK");
-        assert_eq!(obj.formula(), "A1+1");
+        assert_eq!(obj.get_formula(), "A1+1");
         assert!(matches!(
             &obj.raw_value,
             CellRawValue::String(value) if value.as_ref() == "OK"
         ));
 
         obj.set_formula_result_blank();
-        assert_eq!(obj.formula(), "A1+1");
+        assert_eq!(obj.get_formula(), "A1+1");
         assert_eq!(obj.raw_value, CellRawValue::Empty);
     }
 }
