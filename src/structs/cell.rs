@@ -555,7 +555,7 @@ impl Cell {
                     write_text_node(writer, prm);
                 }
                 "e" => {
-                    write_text_node(writer, self.value());
+                    write_text_node(writer, self.get_value());
                 }
                 _ => write_text_node_conversion(writer, self.get_value()),
             }
