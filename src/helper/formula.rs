@@ -176,9 +176,12 @@ pub(crate) fn parse_to_tokens<S: Into<String>>(formula: S) -> Vec<FormulaToken> 
                 if ((index + 2) <= formula_length)
                     && (formula.chars().nth(index + 1).unwrap() == self::QUOTE_SINGLE)
                 {
-                    value = format!("{}{}", value, self::QUOTE_SINGLE);
+                    // escaped quote inside the sheet name: keep both so it round-trips
+                    value = format!("{}{}{}", value, self::QUOTE_SINGLE, self::QUOTE_SINGLE);
                     index += 1;
                 } else {
+                    // closing quote: keep it so the sheet reference stays quoted
+                    value = format!("{}{}", value, self::QUOTE_SINGLE);
                     in_path = false;
                 }
             } else {
@@ -253,16 +256,10 @@ pub(crate) fn parse_to_tokens<S: Into<String>>(formula: S) -> Vec<FormulaToken> 
             continue;
         }
 
+        // start of a quoted sheet path, e.g. '(1)'!$E$38
         if formula.chars().nth(index).unwrap() == self::QUOTE_SINGLE {
-            if value != "" {
-                // unexpected
-                let mut obj = FormulaToken::default();
-                obj.set_value(value);
-                obj.set_token_type(FormulaTokenTypes::Unknown);
-                tokens1.push(obj);
-                value = String::new();
-            }
-            in_string = true;
+            in_path = true;
+            value = format!("{}{}", value, self::QUOTE_SINGLE);
             index += 1;
 
             continue;
@@ -988,5 +985,25 @@ mod tests {
             format!("={}", render(parse_to_tokens(formula).as_ref())),
             formula
         );
+    }
+}
+
+#[cfg(test)]
+mod shared_formula_quoted_sheet_tests {
+    use super::*;
+
+    #[test]
+    fn quoted_sheet_ref_round_trips() {
+        let f = r#"IF(A2=1,'(1)'!$E$38&"-x","")"#;
+        assert_eq!(render(&parse_to_tokens(format!("={}", f))), f);
+    }
+
+    #[test]
+    fn shared_adjustment_preserves_quoted_sheet() {
+        let mut tokens = parse_to_tokens(r#"=IF(A2=1,'(1)'!$E$38&"-x","")"#);
+        let out =
+            adjustment_insert_formula_coordinate(&mut tokens, &0, &0, &2, &1, "", "Main", true);
+        assert!(out.contains("'(1)'!$E$38"), "quoted sheet ref corrupted: {}", out);
+        assert!(!out.contains("(1)!$E$38"), "sheet name lost its quotes: {}", out);
     }
 }
